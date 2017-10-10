@@ -1,0 +1,153 @@
+<!DOCTYPE HTML>
+<html><head>
+<script src="js/jq.js"></script>
+<script src="js/AgoraRTCSDK-1.13.0.js"></script>
+<script src="js/app.js"></script>
+<script>
+$(function(){
+
+$( window ).resize(function() {
+console.log(233)
+});
+
+localdiv=$('#local');
+remotediv=$('#remote');
+
+$('#dial').click(function(){var dialbut=$(this);  if(dialbut.hasClass('end')){
+  client.leave();
+client=null
+}
+ else {
+
+var rid=$('#room').val().trim();
+
+if(rid)
+
+{
+
+  if(client)client.leave();
+client=AgoraRTC.createClient({mode: 'interop'});
+    client.init('fcd3274fb8b441ce945c03bd6f8ff58b', function (obj) { 
+
+if(remoteStream){remoteStream.close();remoteStream=null}if(localStream)localStream.close();
+
+
+ client.join(null, rid, undefined, function(uid) {    
+var vid,aid;
+AgoraRTC.getDevices(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    
+                    if (device.kind === 'audioinput') 
+                       aid=device.deviceId;
+                     if (device.kind === 'videoinput') 
+                       vid=device.deviceId;
+                    } 
+                  });
+
+                     localStream=   AgoraRTC.createStream({
+                streamID: uid,
+                audio: true,
+                cameraId: vid,
+                microphoneId: aid,
+                video: true,
+                screen: false
+            });
+                    localStream.setVideoProfile('720P');
+                  localStream.init(function(){  client.publish(localStream);
+client.on('stream-published');
+remotediv.hide();
+                localdiv.addClass('full');
+                resizediv(localdiv);  
+
+localStream.play('local');
+                  })
+                    });
+
+              
+ 
+
+ client.on('stream-added', function(e) {
+                
+                client.subscribe(e.stream, function(err) {
+                    console.log(err);
+                });
+            });
+
+            client.on('peer-leave', function(evt) { 
+
+            if (remoteStream.getId()==evt.uid) {
+                remoteStream.close();
+                remoteStream=null;
+               // localStream.disableVideo();
+                remotediv.hide();
+                localdiv.addClass('full');
+                resizediv(localdiv);
+localStream.play('local')
+               }               
+                
+            });
+
+            client.on('stream-subscribed', function(e) {
+                if(!remoteStream)
+                {
+              //  localStream.stop() ;
+                localStream.removeClass('full');
+                localStream.play('local'); 
+                remotediv.show();     
+                resizediv(localdiv);  
+                resizediv(remotediv);  
+
+(remoteStream=e.stream).play('remote')
+                }          
+            });
+
+            client.on("stream-removed", function(e) {
+                 if (remoteStream.getId()==e.stream.getId()) {
+                remoteStream.close();
+                remoteStream=null;
+             //   localStream.stop();
+                remotediv.hide();
+                resizediv(localdiv);  
+                resizediv(remotediv);
+                localdiv.addClass('full');
+localStream.play('local')
+               }
+ })
+   } )}
+else alert('put in room name')
+
+
+}
+if(client)
+dialbut.addClass('end');
+else dialbut.removeClass('end')
+
+})
+})
+
+</script>
+<style type="text/css">
+#container{margin-left: auto;
+    margin-right: auto;width: 80%}
+    a#dial,a:active#dial,a:visited#dial {color:#000;text-decoration: none}
+    a#dial:hover{text-decoration:underline}
+    #dial:after {content: url("data:image/gif;base64,R0lGODlhCgAKAJEAAAAAAP///////wAAACH5BAEAAAIALAAAAAAKAAoAAAISlG8AeMq5nnsiSlsjzmpzmj0FADs=")}
+    #dial.end:after {content: 'X'}
+    
+    #local, #remote{display: inline-block;width: 40%;background: #000}
+    #local.full{width:100%}
+
+</style>
+</head><body>
+<div id='container'>
+          <div id="controls">
+                                <input id='room' type='text' /> | <a id='dial' href="javascript:void 0"></a>
+                          
+                    </div>
+                    <div id="local">s</div>
+                    <div id="remote">s</div>
+                </div>
+            
+        
+        </body>
